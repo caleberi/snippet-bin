@@ -1,4 +1,4 @@
-package sql
+package mysql
 
 import (
 	"database/sql"
@@ -11,8 +11,22 @@ type SnippetModel struct {
 }
 
 // Insert inserts a new SnippetModel into the database
-func (spp *SnippetModel) Insert(title, content string) (int, error) {
-	return 0, nil
+func (spp *SnippetModel) Insert(title, content, expires string) (int, error) {
+	query := "INSERT INTO snippets (title, content, created, expires) VALUES (?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))"
+
+	result, err := spp.DB.Exec(query, title, content, expires)
+
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int(id), nil
 }
 
 // Get returns the snippet model instance with the given id

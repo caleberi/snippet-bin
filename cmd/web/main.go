@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/caleberi/snippet-bin/pkg/models/mysql"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -17,10 +18,13 @@ type config struct {
 	dns       string
 }
 
+// TODO: intergrate with redis cache
+
 type application struct {
 	config      *config
 	infoLogger  *log.Logger
 	errorLogger *log.Logger
+	snippetDb   *mysql.SnippetModel
 }
 
 func (app *application) Serve() {
@@ -49,18 +53,21 @@ func main() {
 	infoLogger := log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
 	errorLogger := log.New(os.Stderr, "ERROR:\t", log.Ldate|log.Ltime|log.Llongfile)
 
-	db, err := openDatabase(cfg.dns)
+	conn, err := openDatabase(cfg.dns)
 
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
 
-	defer db.Close()
+	defer conn.Close()
 
 	app := &application{
 		config:      cfg,
 		infoLogger:  infoLogger,
 		errorLogger: errorLogger,
+		snippetDb: &mysql.SnippetModel{
+			DB: conn,
+		},
 	}
 
 	app.Serve()
