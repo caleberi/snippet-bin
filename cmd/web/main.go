@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -21,10 +22,11 @@ type config struct {
 // TODO: intergrate with redis cache
 
 type application struct {
-	config      *config
-	infoLogger  *log.Logger
-	errorLogger *log.Logger
-	snippetDb   *mysql.SnippetModel
+	config        *config
+	infoLogger    *log.Logger
+	errorLogger   *log.Logger
+	templateCache map[string]*template.Template
+	snippetDb     *mysql.SnippetModel
 }
 
 func (app *application) Serve() {
@@ -61,10 +63,17 @@ func main() {
 
 	defer conn.Close()
 
+	templateCache, err := NewTemplateCache("./ui/html/")
+
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
+
 	app := &application{
-		config:      cfg,
-		infoLogger:  infoLogger,
-		errorLogger: errorLogger,
+		config:        cfg,
+		infoLogger:    infoLogger,
+		errorLogger:   errorLogger,
+		templateCache: templateCache,
 		snippetDb: &mysql.SnippetModel{
 			DB: conn,
 		},
